@@ -7,6 +7,7 @@ import PostRow from '../components/PostRow.astro';
 import CatShape from '../components/CatShape.astro';
 import { fetchSanity } from '../lib/sanity';
 import { worklines } from '../data/worklines';
+import { tools } from '../data/tools';
 
 const postsQuery = `{
   "total": count(*[_type == "post"]),
@@ -76,6 +77,31 @@ const leadCats = (lead?.categories ?? []).filter(Boolean);
     </div>
   </section>
 
+  <!-- AI 工具沉淀 -->
+  <section class="wrap pt-14 md:pt-20">
+    <div class="flex flex-wrap items-baseline justify-between gap-4">
+      <h2 class="h2">做项目顺手沉淀的 AI 工具</h2>
+      <a href="/projects#tools" class="ink-link font-bold">详细说明</a>
+    </div>
+    <ul class="tools mt-8">
+      {
+        tools.map((t) => (
+          <li class="tool-item">
+            <span class="tool-kind meta">{t.kind}</span>
+            {t.link ? (
+              <a href={t.link} target="_blank" rel="noopener noreferrer" class="tool-name ink-link">
+                {t.name}
+              </a>
+            ) : (
+              <span class="tool-name">{t.name}</span>
+            )}
+            <span class="tool-text">{t.text}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
   <!-- 博客 -->
   <section class="wrap py-14 md:py-20">
     <div class="flex flex-wrap items-baseline justify-between gap-4">
@@ -141,6 +167,48 @@ const leadCats = (lead?.categories ?? []).filter(Boolean);
   .now-sub {
     font-size: var(--fs-sm);
     font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  .tools {
+    display: grid;
+    gap: 0 48px;
+    border-top: 2px solid var(--ink);
+  }
+
+  @media (min-width: 768px) {
+    .tools {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .tool-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .tool-kind {
+    font-weight: 700;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    line-height: 22px;
+  }
+
+  .tool-name {
+    justify-self: start;
+    font-weight: 800;
+  }
+
+  .tool-text {
+    grid-column: 2;
+    margin-top: 4px;
+    font-size: var(--fs-sm);
+    line-height: 1.7;
     color: var(--ink-2);
   }
 

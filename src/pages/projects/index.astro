@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Metro from '../../components/Metro.astro';
 import { worklines, formatDate } from '../../data/worklines';
+import { tools } from '../../data/tools';
 import { fetchSanity } from '../../lib/sanity';
 
 export const prerender = false;
@@ -74,6 +75,44 @@ const clean = (s?: string) => (s ?? '').replace(/\p{Extended_Pictographic}️?/g
       </section>
     ))
   }
+
+  <section id="tools" class="wrap pt-14">
+    <h2 class="group-h">AI 工具沉淀</h2>
+    <p class="mt-3 max-w-[40em] text-ink-2">
+      做项目时顺手沉淀下来的：两个开源项目、几个给编码代理用的技能，和还在探索的方向。
+    </p>
+    <ul class="mt-2">
+      {
+        tools.map((t) => (
+          <li>
+            {t.link ? (
+              <a href={t.link} target="_blank" rel="noopener noreferrer" class="tool row-bleed">
+                <span class="tool-meta meta">
+                  {t.kind}
+                  {t.since && <span class="num"> · {t.since.replace('-', '.')} 起</span>}
+                </span>
+                <span class="min-w-0">
+                  <span class="tool-name">{t.name} ↗</span>
+                  <span class="tool-text">{t.text}</span>
+                </span>
+              </a>
+            ) : (
+              <div class="tool">
+                <span class="tool-meta meta">
+                  {t.kind}
+                  {t.since && <span class="num"> · {t.since.replace('-', '.')} 起</span>}
+                </span>
+                <span class="min-w-0">
+                  <span class="tool-name">{t.name}</span>
+                  <span class="tool-text">{t.text}</span>
+                </span>
+              </div>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </section>
 
   {
     others.length > 0 && (
@@ -210,6 +249,53 @@ const clean = (s?: string) => (s ?? '').replace(/\p{Extended_Pictographic}️?/g
   .stop-date {
     font-weight: 700;
     color: var(--ink-3);
+  }
+
+  .tool {
+    display: grid;
+    gap: 4px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  @media (min-width: 768px) {
+    .tool {
+      grid-template-columns: 128px 1fr;
+      gap: 24px;
+    }
+    .tool-meta {
+      padding-top: 5px;
+    }
+  }
+
+  .tool-meta {
+    font-weight: 700;
+  }
+
+  .tool-name {
+    display: block;
+    font-size: var(--fs-md);
+    font-weight: 800;
+    line-height: 1.5;
+  }
+
+  .tool-text {
+    display: block;
+    margin-top: 4px;
+    max-width: 40em;
+    font-size: var(--fs-sm);
+    line-height: 1.7;
+    color: var(--ink-2);
+  }
+
+  a.tool:hover .tool-name {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  #tools {
+    scroll-margin-top: 96px;
   }
 
   .other {

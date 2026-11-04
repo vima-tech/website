@@ -64,6 +64,7 @@ This is a hybrid static site using **Astro** for the frontend and **Sanity CMS**
 **Component Organization** (2026-11 MG 风格改版后):
 - `src/components/` - Header, Footer, Mark (站标), HeroShapes (首屏几何插画), Metro (多线时间轴 SVG), LineList (时间轴图例), PostRow (文章列表行), CatShape (分类形状), MarkdownContent / PortableText (正文渲染)
 - `src/data/worklines.ts` - 时间轴数据（各工作线、站点日期）；加新里程碑改这里即可
+- `src/data/tools.ts` - 「AI 工具沉淀」列表（首页与工作页共用）；公开仓库才填 link
 - `src/styles/global.css` - 设计令牌（颜色、字号阶梯、线路颜色 `--line-*`）与正文/代码块样式；深色模式跟随 `prefers-color-scheme`
 - 字体：`@fontsource-variable/archivo` 自托管（仅拉丁字符），中文走系统字体，不依赖 Google Fonts
 
