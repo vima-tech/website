@@ -1,0 +1,93 @@
+---
+// 时间轴图例：每条线现在走到哪一站
+import { worklines } from '../data/worklines';
+
+const groups = [
+  { title: '自己的产品', items: worklines.filter((l) => l.group === 'product') },
+  { title: 'MedAtlas 线组 · 医院周边系统', items: worklines.filter((l) => l.group === 'medatlas') },
+];
+---
+
+<div class="grid gap-10 md:grid-cols-[2fr_3fr] md:gap-14">
+  {
+    groups.map((g) => (
+      <section>
+        <h3 class="group-title">{g.title}</h3>
+        <ul>
+          {g.items.map((l) => (
+            <li>
+              <a href={`/projects#${l.id}`} class="line-row row-bleed">
+                <span class="line-bar" style={`background:var(${l.color})`} />
+                <span class="min-w-0">
+                  <span class="line-name">{l.name}</span>
+                  <span class="line-status">{l.status}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  .group-title {
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .line-row {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .line-bar {
+    margin-top: 7px;
+    height: 10px;
+    border-radius: 999px;
+    transition: transform 180ms var(--ease-pop);
+    transform-origin: left center;
+  }
+
+  .line-row:hover .line-bar {
+    transform: scaleX(1.25);
+  }
+
+  .line-name {
+    display: block;
+    font-weight: 800;
+    line-height: 1.5;
+  }
+
+  .line-status {
+    display: block;
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+
+  .line-row:hover .line-name {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  .line-name::after {
+    content: ' →';
+    opacity: 0;
+    transition: opacity 140ms, transform 160ms var(--ease-move);
+    display: inline-block;
+    transform: translateX(-4px);
+  }
+
+  .line-row:hover .line-name::after {
+    opacity: 1;
+    transform: none;
+  }
+</style>

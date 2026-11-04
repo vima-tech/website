@@ -64,7 +64,7 @@ function renderBlock(block: Block): string {
           // 查找 markDefs 中的链接
           const markDef = block.markDefs?.find((def: any) => def._key === mark);
           if (markDef && markDef._type === 'link' && markDef.href) {
-            text = `<a href="${markDef.href}" class="text-primary-600 hover:underline">${text}</a>`;
+            text = `<a href="${markDef.href}">${text}</a>`;
           }
         }
       }
@@ -78,19 +78,19 @@ function renderBlock(block: Block): string {
   // 根据样式渲染不同的 HTML 标签
   switch (style) {
     case 'h1':
-      return `<h1 class="text-3xl font-bold mt-8 mb-4">${content}</h1>`;
+      return `<h1>${content}</h1>`;
     case 'h2':
-      return `<h2 class="text-2xl font-bold mt-8 mb-4 pb-2 border-b border-gray-200">${content}</h2>`;
+      return `<h2>${content}</h2>`;
     case 'h3':
-      return `<h3 class="text-xl font-bold mt-6 mb-3">${content}</h3>`;
+      return `<h3>${content}</h3>`;
     case 'h4':
-      return `<h4 class="text-lg font-semibold mt-4 mb-2">${content}</h4>`;
+      return `<h4>${content}</h4>`;
     case 'blockquote':
-      return `<blockquote class="border-l-4 border-gray-300 pl-4 my-4 italic text-gray-600">${content}</blockquote>`;
+      return `<blockquote>${content}</blockquote>`;
     case 'normal':
     default:
       if (content.trim()) {
-        return `<p class="mb-4 leading-relaxed">${content}</p>`;
+        return `<p>${content}</p>`;
       }
       return '';
   }
@@ -207,25 +207,25 @@ async function renderCodeBlock(block: Block): Promise<string> {
   
   // 如果有文件名，显示文件名；否则显示语言标签
   const headerLabel = filename 
-    ? `<span class="text-xs font-mono text-gray-600 dark:text-gray-400">${filename}</span>` 
-    : `<span class="text-xs font-semibold text-gray-700 dark:text-gray-300">${displayLanguage}</span>`;
+    ? `<span >${filename}</span>` 
+    : `<span >${displayLanguage}</span>`;
   
   // 判断是否为 Plain Text
   const isPlainText = shikiLang === 'text';
-  const preClasses = `code-block-pre !mt-0 !mb-0 !rounded-none p-4 overflow-x-auto shiki-wrapper${isPlainText ? ' plaintext-code' : ''}`;
+  const preClasses = `code-block-pre shiki-wrapper${isPlainText ? ' plaintext-code' : ''}`;
   
-  return `<div class="code-block-wrapper my-6 group">
-    <div class="code-block-container rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div class="code-block-header flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-850 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-2">
+  return `<div class="code-block-wrapper">
+    <div class="code-block-container">
+      <div class="code-block-header">
+        <div>
           ${headerLabel}
         </div>
-        <button class="copy-code-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1" data-code="${escapedForCopy.replace(/"/g, '&quot;')}" title="复制代码">
+        <button type="button" class="copy-code-btn" data-code="${escapedForCopy.replace(/"/g, '&quot;')}" title="复制代码">
           <span class="copy-text">复制</span>
           <span class="copied-text hidden">已复制!</span>
         </button>
       </div>
-      <pre class="${preClasses}" style="background-color: #333333;">${highlightedCode}</pre>
+      <pre class="${preClasses}">${highlightedCode}</pre>
     </div>
   </div>`;
 }
@@ -241,7 +241,7 @@ if (blocks && blocks.length > 0) {
     }
   }
 } else {
-  html = '<div class="text-gray-500">暂无内容</div>';
+  html = '<p>暂无内容</p>';
 }
 ---
 

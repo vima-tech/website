@@ -1,193 +1,230 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import Badge from '../../components/ui/Badge.astro';
 import MarkdownContent from '../../components/MarkdownContent.astro';
 import PortableText from '../../components/PortableText.astro';
-import PostContentLoader from '../../components/PostContentLoader.vue';
+import CatShape from '../../components/CatShape.astro';
 import { fetchSanity, postBySlugQuery } from '../../lib/sanity';
 
-// 使用SSR模式，允许动态处理任意slug
 export const prerender = false;
 
-// 获取当前文章数据
 const { slug } = Astro.params;
 const post = await fetchSanity<any>(postBySlugQuery, { slug });
 
-// 标记是否显示404内容
-const show404 = !post;
+let newer: any = null;
+let older: any = null;
+if (post) {
+  const near = await fetchSanity<{ newer: any; older: any }>(
+    `{
+      "newer": *[_type == "post" && publishedAt > $at] | order(publishedAt asc)[0]{title, "slug": slug.current},
+      "older": *[_type == "post" && publishedAt < $at] | order(publishedAt desc)[0]{title, "slug": slug.current}
+    }`,
+    { at: post.publishedAt ?? '' },
+  ).catch(() => ({ newer: null, older: null }));
+  newer = near.newer;
+  older = near.older;
+} else {
+  Astro.response.status = 404;
+}
 
-// 确保 categories 是一个数组，过滤掉 null 值
-const safeCategories = post && Array.isArray(post.categories) ? post.categories.filter((cat: any) => cat != null) : [];
-
-const formattedDate = post?.publishedAt ? new Date(post.publishedAt).toLocaleDateString('zh-CN', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-}) : '';
+const cats = (post?.categories ?? []).filter(Boolean);
+const date = post?.publishedAt
+  ? new Date(post.publishedAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Shanghai' })
+  : '';
 ---
 
-<Layout 
-  title={show404 ? '文章未找到 - RMK' : `${post.title} - RMK`}
-  description={show404 ? '抱歉，您访问的文章不存在' : post.excerpt}
+<Layout
+  title={post ? `${post.title.trim()} · 任孟锴` : '文章不存在 · 任孟锴'}
+  description={post?.excerpt}
   image={post?.coverImage}
 >
-  {show404 ? (
-    <!-- 404 内容 -->
-    <div class="section min-h-[60vh] flex items-center justify-center">
-      <div class="container-custom">
-        <div class="max-w-2xl mx-auto text-center">
-          <!-- 404 图标/数字 -->
-          <div class="mb-8">
-            <div class="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900/30 dark:to-primary-800/30 mb-6 animate-float">
-              <span class="text-6xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-                404
-              </span>
-            </div>
-          </div>
-          
-          <!-- 标题 -->
-          <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            文章不存在
-          </h1>
-          
-          <!-- 描述 -->
-          <p class="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-            抱歉，您访问的文章 <code class="px-2 py-1 bg-gray-100 dark:bg-dark-100 rounded text-primary-500">{slug}</code> 不存在或已被删除。
-          </p>
-          
-          <!-- 操作按钮 -->
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a 
-              href="/blog"
-              class="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors shadow-lg shadow-primary-500/25"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-              </svg>
-              浏览所有文章
-            </a>
-            
-            <a 
-              href="/"
-              class="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-dark-100 dark:hover:bg-dark-200 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              返回首页
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  ) : (
-    <!-- 正常文章内容 -->
-    <article class="section" transition:animate="fade">
-      <div class="container-custom">
-        <!-- 文章头部 - 立即显示 -->
-        <header class="max-w-3xl mx-auto text-center mb-12 post-header">
-          <!-- 分类 -->
-          <div class="flex flex-wrap justify-center gap-2 mb-6">
-            {safeCategories.map((cat: any) => (
-              <Badge variant="primary">{cat.title}</Badge>
-            ))}
-          </div>
-          
-          <!-- 标题 -->
-          <h1 class="text-3xl lg:text-display font-bold tracking-tight text-gray-900 dark:text-white mb-6 text-balance">
-            {post.title}
-          </h1>
-          
-          <!-- 元信息 -->
-          <div class="flex items-center justify-center gap-4 text-gray-600 dark:text-gray-400">
-            {post.author && (
-              <div class="flex items-center gap-2">
-                {post.author.avatar && (
-                  <img 
-                    src={post.author.avatar} 
-                    alt={post.author.name}
-                    class="w-8 h-8 rounded-full object-cover"
-                  />
-                )}
-                <span class="text-sm font-medium">{post.author.name}</span>
+  {
+    !post ? (
+      <section class="wrap py-24">
+        <h1 class="h1">这篇文章不存在</h1>
+        <p class="lead mt-4">
+          链接里的 <code class="rounded bg-paper-2 px-2 py-0.5">{slug}</code> 没有对应的文章，可能已经改名或删除。
+        </p>
+        <a href="/blog" class="pill mt-8">回到文章列表</a>
+      </section>
+    ) : (
+      <div class="progress" aria-hidden="true"><span data-progress /></div>
+      <article class="wrap pb-16 pt-8 md:pb-24 md:pt-12">
+        <div class="mx-auto max-w-[760px]">
+          <a href="/blog" class="back meta">← 博客</a>
+          <header class="mt-6">
+            {cats.length > 0 && (
+              <div class="flex flex-wrap gap-4">
+                {cats.map((c: any) => (
+                  <a href={`/blog?category=${c.slug?.current ?? c.slug}`} class="cat">
+                    <CatShape title={c.title} />
+                    {c.title}
+                  </a>
+                ))}
               </div>
             )}
-            <span class="text-gray-300 dark:text-gray-600">·</span>
-            <time datetime={post.publishedAt} class="text-sm">{formattedDate}</time>
-          </div>
-        </header>
-        
-        <!-- 封面图 - 立即显示 -->
-        {post.coverImage && (
-          <div class="max-w-4xl mx-auto mb-12 rounded-2xl overflow-hidden post-cover">
-            <img 
-              src={post.coverImage} 
-              alt={post.title}
-              class="w-full aspect-video object-cover"
-              loading="eager"
-            />
-          </div>
-        )}
-        
-        <!-- 文章内容 - 使用骨架屏加载器 -->
-        <div class="max-w-3xl mx-auto prose prose-lg dark:prose-invert max-w-none">
-          <PostContentLoader client:load>
+            <h1 class="post-h1 mt-4">{post.title.trim()}</h1>
+            <p class="meta mt-4 num">
+              <time datetime={post.publishedAt}>{date}</time>
+              {post.author?.name && <span> · {post.author.name}</span>}
+            </p>
+            {post.excerpt && <p class="summary">{post.excerpt}</p>}
+          </header>
+
+          {post.coverImage && (
+            <img src={post.coverImage} alt="" class="mt-10 aspect-video w-full rounded-[10px] object-cover" loading="eager" />
+          )}
+
+          <div class="mt-10">
             {typeof post.body === 'string' ? (
               <MarkdownContent content={post.body} />
             ) : (
-              <PortableText blocks={post.body} />
+              <div class="article">
+                <PortableText blocks={post.body} />
+              </div>
             )}
-          </PostContentLoader>
-          
-          <!-- 返回按钮 -->
-          <div class="mt-16 pt-8 border-t border-gray-200 dark:border-dark-200">
-            <a href="/blog" data-astro-prefetch="hover" class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-              </svg>
-              返回日志列表
-            </a>
           </div>
+
+          {(newer || older) && (
+            <nav aria-label="相邻文章" class="near">
+              {older ? (
+                <a href={`/blog/${older.slug}`} class="near-link">
+                  <span class="meta">← 更早一篇</span>
+                  <span class="near-title">{older.title.trim()}</span>
+                </a>
+              ) : (
+                <span />
+              )}
+              {newer && (
+                <a href={`/blog/${newer.slug}`} class="near-link md:text-right">
+                  <span class="meta">更新一篇 →</span>
+                  <span class="near-title">{newer.title.trim()}</span>
+                </a>
+              )}
+            </nav>
+          )}
         </div>
-      </div>
-    </article>
-  )}
+      </article>
+    )
+  }
 </Layout>
 
 <style>
-  /* 为 prose 添加额外样式 */
-  .prose :where(h2):not(:where([class~="not-prose"] *)) {
-    @apply border-b border-gray-200 dark:border-dark-200 pb-2;
+  /* 阅读进度：贴在顶栏下方的一条线 */
+  .progress {
+    position: sticky;
+    top: 64px;
+    z-index: 40;
+    height: 3px;
+    margin-bottom: -3px;
+    background: transparent;
   }
-  
-  /* 文章头部和封面图入场动画 */
-  .post-header,
-  .post-cover {
-    animation: slideUp 0.4s ease-out;
-  }
-  
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+
+  @media (min-width: 768px) {
+    .progress {
+      top: 80px;
     }
   }
-  
-  /* 404 浮动动画 */
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
+
+  .progress span {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--line-factory);
+    transform: scaleX(var(--p, 0));
+    transform-origin: left;
   }
-  
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0);
+
+  .back {
+    font-weight: 700;
+  }
+
+  .back:hover {
+    color: var(--ink);
+  }
+
+  .cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--ink-2);
+  }
+
+  .cat:hover {
+    color: var(--ink);
+  }
+
+  .post-h1 {
+    font-size: 30px;
+    font-weight: 850;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  @media (min-width: 768px) {
+    .post-h1 {
+      font-size: 44px;
+      line-height: 1.22;
     }
-    50% {
-      transform: translateY(-10px);
+  }
+
+  .summary {
+    margin-top: 24px;
+    padding: 18px 22px;
+    border-radius: 10px;
+    background: var(--paper-2);
+    font-size: var(--fs-base);
+    line-height: 1.8;
+    color: var(--ink-2);
+  }
+
+  .near {
+    display: grid;
+    gap: 16px;
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 2px solid var(--ink);
+  }
+
+  @media (min-width: 768px) {
+    .near {
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
     }
+  }
+
+  .near-link {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .near-title {
+    font-weight: 800;
+    line-height: 1.5;
+  }
+
+  .near-link:hover .near-title {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
   }
 </style>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-progress]');
+  const article = document.querySelector('article');
+  if (bar && article) {
+    const update = () => {
+      const r = article.getBoundingClientRect();
+      const total = r.height - window.innerHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 1;
+      bar.style.setProperty('--p', p.toFixed(4));
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+  }
+</script>

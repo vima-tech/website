@@ -1,0 +1,111 @@
+---
+import CatShape from './CatShape.astro';
+
+interface Props {
+  post: {
+    title: string;
+    slug: { current: string } | string;
+    excerpt?: string;
+    publishedAt?: string;
+    categories?: { title: string; slug?: { current: string } | string }[];
+  };
+  showExcerpt?: boolean;
+}
+
+const { post, showExcerpt = true } = Astro.props;
+const slug = typeof post.slug === 'string' ? post.slug : post.slug?.current;
+const cats = (post.categories ?? []).filter(Boolean);
+const date = post.publishedAt ? post.publishedAt.slice(0, 10).replaceAll('-', '.') : '';
+---
+
+<a href={`/blog/${slug}`} class="post-row row-bleed">
+  <span class="post-date meta num">{date}</span>
+  <span class="min-w-0">
+    <span class="post-title">{post.title.trim()}</span>
+    {showExcerpt && post.excerpt && <span class="post-excerpt">{post.excerpt}</span>}
+    {
+      cats.length > 0 && (
+        <span class="post-cats">
+          {cats.map((c) => (
+            <span class="post-cat">
+              <CatShape title={c.title} />
+              {c.title}
+            </span>
+          ))}
+        </span>
+      )
+    }
+  </span>
+</a>
+
+<style>
+  .post-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  @media (min-width: 768px) {
+    .post-row {
+      grid-template-columns: 112px 1fr;
+      gap: 24px;
+    }
+    .post-date {
+      padding-top: 5px;
+    }
+  }
+
+  .post-title {
+    display: inline;
+    font-size: var(--fs-md);
+    font-weight: 800;
+    line-height: 1.5;
+    background-image: linear-gradient(var(--line-nutrition), var(--line-nutrition));
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0 0.3em;
+    transition: background-size 200ms var(--ease-move);
+  }
+
+  .post-row:hover .post-title {
+    background-size: 100% 0.3em;
+  }
+
+  .post-row:hover .post-date {
+    color: var(--ink);
+  }
+
+  .post-date {
+    transition: color 140ms;
+  }
+
+  .post-excerpt {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 6px;
+    max-width: 44em;
+    font-size: var(--fs-sm);
+    line-height: 1.7;
+    color: var(--ink-2);
+  }
+
+  .post-cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 8px;
+  }
+
+  .post-cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--ink-3);
+  }
+</style>

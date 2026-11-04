@@ -1,0 +1,208 @@
+---
+// 首屏几何插画：工厂（河北工厂网）、校服（校服SHOP）、十字圆（MedAtlas），
+// 围着十字圆的四个小图形对应营养、随访、审方、输血。
+// 结构：.mg 负责入场（弹出），内层 .idle 负责入场后的慢速循环动效。
+---
+
+<svg viewBox="0 0 540 470" class="hero-shapes" aria-hidden="true">
+  <!-- MedAtlas -->
+  <g class="mg" style="--i:0;--ox:330px;--oy:230px">
+    <g class="idle idle-breathe" style="--ox:330px;--oy:230px">
+      <circle cx="330" cy="230" r="140" fill="var(--line-medatlas)"></circle>
+      <rect x="310" y="168" width="40" height="124" rx="6" fill="var(--paper)"></rect>
+      <rect x="268" y="210" width="124" height="40" rx="6" fill="var(--paper)"></rect>
+    </g>
+  </g>
+
+  <!-- 校服 -->
+  <g class="mg" style="--i:1;--ox:130px;--oy:110px">
+    <g class="idle idle-sway" style="--ox:130px;--oy:30px">
+      <g transform="translate(40 26) scale(1.5)">
+        <path
+          d="M30 10 L48 3 Q60 16 72 3 L90 10 L116 34 L100 52 L90 44 L90 106 L30 106 L30 44 L20 52 L4 34 Z"
+          fill="var(--line-uniform)"></path>
+        <path d="M48 3 L60 26 L72 3 Q60 16 48 3 Z" fill="var(--paper)"></path>
+        <rect x="57" y="30" width="6" height="6" rx="3" fill="var(--paper)"></rect>
+        <rect x="57" y="44" width="6" height="6" rx="3" fill="var(--paper)"></rect>
+        <rect x="68" y="58" width="14" height="10" rx="2" fill="var(--line-nutrition)"></rect>
+      </g>
+    </g>
+  </g>
+
+  <!-- 烟：从烟囱口（根坐标 192,276）循环上升 -->
+  <g class="smoke">
+    <circle class="puff" style="--d:0s" cx="192" cy="272" r="9" fill="var(--ink-3)"></circle>
+    <circle class="puff" style="--d:1.3s" cx="192" cy="272" r="12" fill="var(--ink-3)"></circle>
+    <circle class="puff" style="--d:2.6s" cx="192" cy="272" r="7" fill="var(--ink-3)"></circle>
+  </g>
+
+  <!-- 工厂 -->
+  <g class="mg" style="--i:2;--ox:120px;--oy:370px">
+    <g transform="translate(18 282) scale(1.45)">
+      <rect x="112" y="0" width="16" height="52" rx="2" fill="#b23c0b"></rect>
+      <path d="M0 52 L0 24 L34 46 L34 24 L68 46 L68 24 L102 46 L102 24 L140 48 L140 52 Z" fill="var(--line-factory)"
+      ></path>
+      <rect x="0" y="50" width="140" height="70" fill="var(--line-factory)"></rect>
+      <rect x="14" y="68" width="22" height="16" rx="2" fill="var(--paper)"></rect>
+      <rect x="48" y="68" width="22" height="16" rx="2" fill="var(--paper)"></rect>
+      <rect x="82" y="68" width="22" height="16" rx="2" fill="var(--paper)"></rect>
+      <rect x="104" y="94" width="24" height="26" rx="2" fill="#b23c0b"></rect>
+    </g>
+  </g>
+
+  <!-- 营养 -->
+  <g class="mg" style="--i:3;--ox:492px;--oy:96px">
+    <circle class="idle idle-float" style="--d:0.4s" cx="492" cy="96" r="24" fill="var(--line-nutrition)"></circle>
+  </g>
+  <!-- 随访 -->
+  <g class="mg" style="--i:4;--ox:506px;--oy:250px">
+    <circle
+      class="idle idle-float"
+      style="--d:1.1s"
+      cx="506"
+      cy="250"
+      r="17"
+      fill="none"
+      stroke="var(--line-followup)"
+      stroke-width="9"></circle>
+  </g>
+  <!-- 审方 -->
+  <g class="mg" style="--i:5;--ox:470px;--oy:374px">
+    <g class="idle idle-tilt" style="--ox:470px;--oy:374px">
+      <g transform="rotate(-35 470 374)">
+        <rect x="436" y="358" width="68" height="32" rx="16" fill="var(--line-rx)"></rect>
+        <rect x="470" y="358" width="34" height="32" rx="0" fill="var(--paper)" opacity="0.35"></rect>
+      </g>
+    </g>
+  </g>
+  <!-- 输血 -->
+  <g class="mg" style="--i:6;--ox:362px;--oy:430px">
+    <path
+      class="idle idle-drop"
+      d="M362 398 C374 416 384 428 384 440 A22 22 0 0 1 340 440 C340 428 350 416 362 398 Z"
+      fill="var(--line-transfusion)"></path>
+  </g>
+</svg>
+
+<style>
+  .hero-shapes {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .mg {
+    transform-origin: var(--ox) var(--oy);
+    /* 硬边投影：剪纸层叠的厚度 */
+    filter: drop-shadow(6px 8px 0 var(--shadow-ink));
+  }
+
+  .idle {
+    transform-box: view-box;
+    transform-origin: var(--ox, 50%) var(--oy, 50%);
+  }
+
+  :global(html.js) .mg {
+    animation: mg-in 640ms var(--ease-pop) calc(120ms + var(--i) * 85ms) both;
+  }
+
+  @keyframes mg-in {
+    0% {
+      transform: scale(0) rotate(-24deg);
+    }
+    100% {
+      transform: scale(1) rotate(0);
+    }
+  }
+
+  /* 入场结束后开始的慢速循环，幅度都很小 */
+  :global(html.js) .idle-breathe {
+    animation: breathe 7s ease-in-out 1.2s infinite;
+  }
+  :global(html.js) .idle-sway {
+    animation: sway 6s ease-in-out 1.2s infinite;
+  }
+  :global(html.js) .idle-float {
+    animation: float 5s ease-in-out calc(1.2s + var(--d, 0s)) infinite;
+  }
+  :global(html.js) .idle-tilt {
+    animation: tilt 8s ease-in-out 1.2s infinite;
+  }
+  :global(html.js) .idle-drop {
+    animation: drop 3.2s cubic-bezier(0.5, 0, 0.2, 1) 1.2s infinite;
+  }
+  :global(html.js) .puff {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: puff 3.9s linear var(--d) infinite;
+  }
+
+  @keyframes breathe {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.025);
+    }
+  }
+
+  @keyframes sway {
+    0%,
+    100% {
+      transform: rotate(-2deg);
+    }
+    50% {
+      transform: rotate(2deg);
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes tilt {
+    0%,
+    100% {
+      transform: rotate(0);
+    }
+    50% {
+      transform: rotate(10deg);
+    }
+  }
+
+  @keyframes drop {
+    0%,
+    100% {
+      transform: translateY(0) scaleY(1);
+    }
+    40% {
+      transform: translateY(-10px) scaleY(1.06);
+    }
+    55% {
+      transform: translateY(2px) scaleY(0.96);
+    }
+  }
+
+  @keyframes puff {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.6);
+    }
+    12% {
+      opacity: 0.55;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-18px, -66px) scale(1.5);
+    }
+  }
+</style>

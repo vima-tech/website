@@ -1,138 +1,236 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Hero from '../components/Hero.astro';
-import SectionTitle from '../components/ui/SectionTitle.astro';
-import PostCard from '../components/PostCard.astro';
-import ProjectCard from '../components/ProjectCard.astro';
-import Card from '../components/ui/Card.astro';
-import Button from '../components/ui/Button.astro';
-import DashboardTabs from '../components/DashboardTabs.vue';
+import HeroShapes from '../components/HeroShapes.astro';
+import Metro from '../components/Metro.astro';
+import LineList from '../components/LineList.astro';
+import PostRow from '../components/PostRow.astro';
+import CatShape from '../components/CatShape.astro';
 import { fetchSanity } from '../lib/sanity';
+import { worklines } from '../data/worklines';
 
-// 从 Sanity 获取最新文章（3篇）
-const postsQuery = `*[_type == "post"] | order(publishedAt desc)[0...3] {
-  _id,
-  title,
-  slug,
-  excerpt,
-  publishedAt,
-  "coverImage": coverImage.asset->url,
-  categories[]->{title, slug}
+const postsQuery = `{
+  "total": count(*[_type == "post"]),
+  "posts": *[_type == "post"] | order(publishedAt desc)[0...5] {
+    _id, title, slug, excerpt, publishedAt,
+    categories[]->{title, slug}
+  }
 }`;
 
-// 从 Sanity 获取项目（优先精选，否则显示所有项目）
-const projectsQuery = `*[_type == "project"] | order(featured desc, order asc)[0...3] {
-  _id,
-  title,
-  slug,
-  description,
-  "thumbnail": thumbnail.asset->url,
-  technologies,
-  featured
-}`;
+let total = 0;
+let posts: any[] = [];
+let loadFailed = false;
+try {
+  const res = await fetchSanity<{ total: number; posts: any[] }>(postsQuery);
+  total = res.total;
+  posts = res.posts ?? [];
+} catch {
+  loadFailed = true;
+}
 
-// 并行获取数据
-const [posts, projects] = await Promise.all([
-  fetchSanity<any[]>(postsQuery),
-  fetchSanity<any[]>(projectsQuery)
-]);
+const [lead, ...rest] = posts;
+const leadDate = lead?.publishedAt?.slice(0, 10).replaceAll('-', '.');
+const leadCats = (lead?.categories ?? []).filter(Boolean);
 ---
 
-<Layout title="纬蚂科技企业站">
-  <!-- Hero Section -->
-  <Hero 
-    title="AI Agent 驱动的开发团队"
-    description="专注 AI Agent 工具与多智能体编排，80%工作由AI完成。助力企业降本增效，招商合作共赢AI时代。"
-  />
-
-  <!-- 数据统计展示 -->
-  <section class="py-16 border-t border-gray-100">
-    <div class="container-custom">
-      <DashboardTabs client:visible />
+<Layout title="任孟锴 · 一人公司">
+  <!-- 首屏 -->
+  <section class="wrap grid items-center gap-8 pb-10 pt-10 md:grid-cols-[1.15fr_1fr] md:gap-12 md:pb-16 md:pt-16">
+    <div>
+      <h1 class="display">任孟锴</h1>
+      <p class="lead mt-6 max-w-[30em]">
+        一人公司（OPC）。我带一组 AI 编码代理，把需求做成能交付、能上线的系统。这里放正在做的项目，和写下来的做法。
+      </p>
+      <ul class="now mt-7">
+        <li><span class="now-dot" style="background:var(--line-factory)"></span>河北工厂网</li>
+        <li><span class="now-dot" style="background:var(--line-uniform)"></span>校服SHOP</li>
+        <li>
+          <span class="now-dot" style="background:var(--line-medatlas)"></span>MedAtlas
+          <span class="now-sub">营养 · 输血 · 审方 · 随访</span>
+        </li>
+      </ul>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="#timeline" class="pill">看时间轴<svg class="arr arr-down" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v11M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a href="/blog" class="pill pill-ghost">读博客<svg class="arr" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+    </div>
+    <div class="mx-auto w-full max-w-[460px] md:max-w-none">
+      <HeroShapes />
     </div>
   </section>
 
-  <!-- 最新日志 -->
-  <section class="section">
-    <div class="container-custom">
-      <SectionTitle 
-        title="最新日志" 
-        subtitle="博客"
-      >
-        记录技术探索与思考，分享学习心得与实践经验
-      </SectionTitle>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        {posts.map((post) => (
-          <PostCard
-            title={post.title}
-            excerpt={post.excerpt}
-            slug={post.slug}
-            coverImage={post.coverImage}
-            publishedAt={post.publishedAt}
-            categories={post.categories}
-          />
-        ))}
-      </div>
-      
-      <div class="text-center mt-12">
-        <Button href="/blog" variant="secondary" showArrow>
-          查看全部日志
-        </Button>
-      </div>
-    </div>
-  </section>
-
-  <!-- 精选作品 -->
-  <section class="section bg-gray-50/50">
-    <div class="container-custom">
-      <SectionTitle 
-        title="精选作品" 
-        subtitle="项目"
-      >
-        展示我参与或独立完成的项目，从创意到落地的完整历程
-      </SectionTitle>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        {projects.map((project) => (
-          <ProjectCard
-            title={project.title}
-            description={project.description}
-            slug={project.slug}
-            thumbnail={project.thumbnail}
-            technologies={project.technologies}
-            featured={project.featured}
-          />
-        ))}
-      </div>
-      
-      <div class="text-center mt-12">
-        <Button href="/projects" variant="secondary" showArrow>
-          查看全部作品
-        </Button>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA Section -->
-  <section class="section">
-    <div class="container-custom">
-      <div class="bg-white rounded-3xl border border-gray-100 shadow-card text-center py-16 lg:py-20 px-6">
-        <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-          有项目想法？让我们聊聊
-        </h2>
-        <p class="text-lg text-gray-500 max-w-xl mx-auto mb-8">
-          无论是技术咨询、项目合作还是单纯的交流，我都很乐意听取你的想法
+  <!-- 时间轴 -->
+  <section id="timeline" class="timeline-band">
+    <div class="wrap py-14 md:py-20">
+      <div class="grid gap-4 md:grid-cols-[1fr_1fr] md:items-end md:gap-12">
+        <h2 class="h2">8 月底到现在，{worklines.length} 条线同时在跑</h2>
+        <p class="text-ink-2 md:max-w-[34em]">
+          每条线一种颜色，圆点是里程碑，黑圈是大节点。审方、营养、输血先各自做成独立系统，再按功能归集到 MedAtlas；随访直接在 MedAtlas 上开发。
         </p>
-        <div class="flex flex-wrap items-center justify-center gap-4">
-          <Button href="/contact" variant="primary" showArrow>
-            了解更多
-          </Button>
-          <Button href="mailto:renmengkai@gmail.com" variant="secondary">
-            发送邮件
-          </Button>
-        </div>
+      </div>
+      <div class="mt-10">
+        <Metro />
+      </div>
+      <div class="mt-14">
+        <LineList />
       </div>
     </div>
+  </section>
+
+  <!-- 博客 -->
+  <section class="wrap py-14 md:py-20">
+    <div class="flex flex-wrap items-baseline justify-between gap-4">
+      <h2 class="h2">最近写的</h2>
+      {total > 0 && <a href="/blog" class="ink-link font-bold">全部 {total} 篇</a>}
+    </div>
+
+    {
+      loadFailed && (
+        <p class="mt-8 text-ink-2">
+          文章列表暂时没加载出来，稍后刷新试试，或直接去 <a href="/blog" class="ink-link font-bold">博客页</a>。
+        </p>
+      )
+    }
+
+    {
+      lead && (
+        <div class="mt-8 grid gap-8 md:grid-cols-[1.1fr_1fr] md:gap-14">
+          <a href={`/blog/${lead.slug.current}`} class="lead-post">
+            <span class="lead-meta meta num">
+              {leadDate}
+              {leadCats.map((c: any) => (
+                <span class="inline-flex items-center gap-1.5">
+                  <CatShape title={c.title} />
+                  {c.title}
+                </span>
+              ))}
+            </span>
+            <span class="lead-title">{lead.title.trim()}</span>
+            {lead.excerpt && <span class="lead-excerpt">{lead.excerpt}</span>}
+            <span class="lead-go">读全文</span>
+          </a>
+          <div class="border-t-2 border-ink">
+            {rest.map((p) => <PostRow post={p} showExcerpt={false} />)}
+          </div>
+        </div>
+      )
+    }
   </section>
 </Layout>
+
+<style>
+  .now {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    font-weight: 800;
+  }
+
+  .now li {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .now-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+
+  .now-sub {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  .timeline-band {
+    background: var(--paper-2);
+    scroll-margin-top: 0;
+  }
+
+  .lead-post {
+    align-self: start;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 28px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--paper);
+    overflow: hidden;
+    box-shadow: 0 0 0 var(--line-nutrition);
+    transition: transform 200ms var(--ease-pop), box-shadow 200ms var(--ease-pop);
+  }
+
+  .lead-post:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 8px 8px 0 var(--line-nutrition);
+  }
+
+  .lead-post::after {
+    content: '';
+    position: absolute;
+    right: -46px;
+    bottom: -46px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: var(--line-factory);
+    transition: transform 320ms var(--ease-pop);
+  }
+
+  .lead-post:hover::after {
+    transform: scale(1.35);
+  }
+
+  .lead-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    color: inherit;
+    opacity: 0.75;
+    font-weight: 700;
+  }
+
+  .lead-title {
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  @media (min-width: 768px) {
+    .lead-title {
+      font-size: 30px;
+    }
+  }
+
+  .lead-excerpt {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 36em;
+    font-size: var(--fs-sm);
+    line-height: 1.75;
+    opacity: 0.82;
+  }
+
+  .lead-go {
+    position: relative;
+    z-index: 1;
+    margin-top: 8px;
+    font-weight: 800;
+  }
+
+  .lead-go::after {
+    content: ' →';
+    display: inline-block;
+    transition: transform 160ms var(--ease-move);
+  }
+
+  .lead-post:hover .lead-go::after {
+    transform: translateX(4px);
+  }
+</style>

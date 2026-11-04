@@ -1,0 +1,631 @@
+---
+// 多线时间轴（线路图样式）
+// 横轴是日期，每条工作线一行；站点是里程碑。
+import { worklines, TODAY, RANGE, formatDate, lineById } from '../data/worklines';
+
+const W = 1160;
+const PAD_L = 132;
+const PAD_R = 44;
+const TOP = 44;
+const SWEEP = 2.6;
+const MIN_W = 860; // 窄屏下 SVG 的固定宽度 // 秒：从最早一站扫到今天
+
+const rowY: Record<string, number> = {
+  factory: TOP + 30,
+  uniform: TOP + 82,
+  medatlas: TOP + 170,
+  followup: TOP + 218,
+  rx: TOP + 266,
+  nutrition: TOP + 314,
+  transfusion: TOP + 362,
+};
+const H = TOP + 362 + 56;
+
+const day = (d: string) => (Date.parse(d) - Date.parse(RANGE.start)) / 86400000;
+const spanDays = day(RANGE.end);
+const x = (d: string) => PAD_L + (day(d) / spanDays) * (W - PAD_L - PAD_R);
+
+const xToday = x(TODAY);
+const x0 = Math.min(...worklines.map((l) => x(l.stations[0].date)));
+const t = (px: number) => Math.max(0, ((px - x0) / (xToday - x0)) * SWEEP);
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+const months = ['2026-09-01', '2026-10-01', '2026-11-01'].map((d, i, arr) => ({
+  x: x(d),
+  w: x(arr[i + 1] ?? RANGE.end) - x(d),
+  label: `${Number(d.slice(5, 7))}月`,
+  shade: i % 2 === 0,
+}));
+
+const lines = worklines.map((line, i) => {
+  const y = rowY[line.id];
+  const first = line.stations[0].date;
+  const xs = x(first);
+  let d: string;
+  let startPx = xs;
+  if (line.branchFrom) {
+    const py = rowY[line.branchFrom];
+    const bx = xs - 64;
+    d = `M ${bx} ${py} C ${bx + 40} ${py}, ${xs - 30} ${y}, ${xs} ${y} L ${xToday} ${y}`;
+    startPx = bx;
+  } else {
+    d = `M ${xs} ${y} L ${xToday} ${y}`;
+  }
+  return {
+    ...line,
+    i,
+    y,
+    d,
+    labelGuideEnd: line.branchFrom ? xs - 14 : xs - 16,
+    draw: { delay: r2(t(startPx)), dur: r2(Math.max(0.2, t(xToday) - t(startPx))) },
+    stations: line.stations.map((s) => ({ ...s, cx: x(s.date), delay: r2(t(x(s.date))) })),
+  };
+});
+
+// 计划归集：审方 / 营养 / 输血 → MedAtlas，画在 MedAtlas 立项那天
+const trunk = lineById('medatlas')!;
+const mergeX = x(trunk.stations[0].date);
+const mergeRows = worklines.filter((l) => l.mergesInto === 'medatlas').map((l) => rowY[l.id]);
+const mergeBottom = Math.max(...mergeRows);
+
+const latest = [...lines]
+  .flatMap((l) => l.stations.map((s) => ({ ...s, line: l })))
+  .sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+---
+
+<figure class="metro" data-metro>
+  <div class="metro-scroll" data-metro-scroll>
+    <div class="metro-sticky" aria-hidden="true">
+      {
+        lines.map((l) => (
+          <span class="metro-chip" style={`top:${r2((l.y * MIN_W) / W - 11)}px`}>
+            <span style={`background:var(${l.color})`} />
+            {l.short}
+          </span>
+        ))
+      }
+    </div>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      class="metro-svg"
+      role="group"
+      aria-label={`工作时间轴：${RANGE.start.slice(0, 7)} 至今，共 ${worklines.length} 条线`}
+    >
+      <!-- 月份刻度与隔月底纹 -->
+      {
+        months.map((m) => (
+          <g class="metro-month">
+            {m.shade && <rect class="metro-shade" x={m.x} y={TOP - 6} width={m.w} height={H - TOP - 18} />}
+            <line x1={m.x} x2={m.x} y1={TOP - 6} y2={H - 24} />
+            <text x={m.x + 6} y={TOP - 14}>{m.label}</text>
+          </g>
+        ))
+      }
+
+      <!-- 线名与引导虚线 -->
+      {
+        lines.map((l) => (
+          <g class="metro-label" style={`--d:${l.i * 0.05}s`}>
+            <text x="0" y={l.y + 5}>
+              {l.short}
+            </text>
+            <line class="metro-guide" x1={PAD_L - 14} x2={l.labelGuideEnd} y1={l.y} y2={l.y} />
+          </g>
+        ))
+      }
+
+      <!-- 归集连接 -->
+      <g class="metro-merge" style={`--d:${r2(t(mergeX))}s`}>
+        <line x1={mergeX} x2={mergeX} y1={rowY.medatlas} y2={mergeBottom} />
+        {mergeRows.map((y) => <circle cx={mergeX} cy={y} r="5" />)}
+        <text x={mergeX + 10} y={mergeBottom + 26}>10.3 起按功能逐项归集到 MedAtlas</text>
+      </g>
+
+      <!-- 线路 -->
+      {
+        lines.map((l) => (
+          <g style={`--c:var(${l.color})`}>
+            <path class="metro-track" d={l.d} pathLength="1" style={`--d:${l.draw.delay}s;--dur:${l.draw.dur}s`} />
+            <line
+              class="metro-future"
+              x1={xToday + 12}
+              x2={xToday + 34}
+              y1={l.y}
+              y2={l.y}
+              style={`--d:${r2(SWEEP)}s`}
+            />
+          </g>
+        ))
+      }
+
+      <!-- 今天 -->
+      <g class="metro-today" style={`--from:${r2(x0 - xToday)}px;--dur:${SWEEP}s`}>
+        <line x1={xToday} x2={xToday} y1={TOP - 6} y2={H - 26} />
+        <rect x={xToday - 38} y={H - 24} width="76" height="22" rx="11" />
+        <text x={xToday} y={H - 9} text-anchor="middle">今天 {formatDate(TODAY)}</text>
+      </g>
+
+      <!-- 站点 -->
+      {
+        lines.map((l) =>
+          l.stations.map((s) => (
+            <g
+              class:list={['metro-station', { major: s.major }]}
+              style={`--c:var(${l.color});--d:${s.delay}s`}
+              transform={`translate(${s.cx} ${l.y})`}
+              tabindex="0"
+              role="button"
+              aria-label={`${l.name}，${formatDate(s.date)}：${s.text}`}
+              data-line={l.name}
+              data-color={l.color}
+              data-date={formatDate(s.date)}
+              data-text={s.text}
+            >
+              <circle class="hit" r="14" />
+              <circle class="halo" r={s.major ? 13 : 10.5} />
+              <circle class="dot" r={s.major ? 9 : 6.5} />
+            </g>
+          )),
+        )
+      }
+      <!-- 就地提示：JS 定位到当前站点 -->
+      <g class="metro-tip" data-tip aria-hidden="true">
+        <rect rx="8" />
+        <text><tspan data-tip-date /><tspan data-tip-text dx="8" /></text>
+      </g>
+    </svg>
+  </div>
+
+  <figcaption class="metro-caption" aria-live="polite" style={`--cap:var(${latest.line.color})`}>
+    <span class="metro-caption-dot" style={`background:var(${latest.line.color})`} data-cap-dot></span>
+    <span class="metro-caption-line" data-cap-line>{latest.line.name}</span>
+    <span class="metro-caption-date num" data-cap-date>{formatDate(latest.date)}</span>
+    <span class="metro-caption-text" data-cap-text>{latest.text}</span>
+  </figcaption>
+  <p class="metro-hint meta">往左滑看更早的站点；点站点看这一站做了什么。</p>
+</figure>
+
+<style>
+  .metro {
+    margin: 0;
+  }
+
+  .metro-scroll {
+    display: grid;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .metro-svg {
+    grid-area: 1 / 1;
+    display: block;
+    width: 100%;
+    min-width: 860px;
+    height: auto;
+    font-family: var(--font-sans);
+  }
+
+  /* 窄屏：线名贴在左侧，横向滑动时一直可见 */
+  .metro-sticky {
+    grid-area: 1 / 1;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    width: 0;
+    display: none;
+  }
+
+  .metro-chip {
+    position: absolute;
+    left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 8px 0 6px;
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .metro-chip span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  @media (max-width: 899px) {
+    .metro-sticky {
+      display: block;
+    }
+    .metro-label,
+    .metro-merge text {
+      visibility: hidden;
+    }
+  }
+
+  .metro-shade {
+    fill: var(--surface);
+    opacity: 0.28;
+  }
+
+  :global(html) .metro-month line {
+    stroke: var(--rule);
+    stroke-width: 1;
+  }
+
+  .metro-month text {
+    font-size: 13px;
+    font-weight: 700;
+    fill: var(--ink-3);
+  }
+
+  .metro-label text {
+    font-size: 15px;
+    font-weight: 800;
+    fill: var(--ink);
+  }
+
+  .metro-guide {
+    stroke: var(--rule);
+    stroke-width: 2;
+    stroke-dasharray: 1 6;
+    stroke-linecap: round;
+  }
+
+  .metro-track {
+    fill: none;
+    stroke: var(--c);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .metro-future {
+    stroke: var(--c);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 0.1 11;
+  }
+
+  .metro-merge line {
+    stroke: var(--ink-3);
+    stroke-width: 2;
+    stroke-dasharray: 5 5;
+  }
+
+  .metro-merge circle {
+    fill: var(--paper);
+    stroke: var(--ink-3);
+    stroke-width: 2;
+  }
+
+  .metro-merge text {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--ink-3);
+  }
+
+  .metro-today line {
+    stroke: var(--ink);
+    stroke-width: 2;
+    stroke-dasharray: 3 5;
+  }
+
+  .metro-today rect {
+    fill: var(--ink);
+  }
+
+  .metro-today text {
+    font-size: 12px;
+    font-weight: 800;
+    fill: var(--paper);
+  }
+
+  .metro-station {
+    cursor: pointer;
+    outline: none;
+  }
+
+  .metro-station .hit {
+    fill: transparent;
+  }
+
+  .metro-station .halo {
+    fill: var(--paper-2);
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 160ms var(--ease-pop);
+  }
+
+  .metro-station:hover .halo,
+  .metro-station:focus-visible .halo,
+  .metro-station[aria-pressed='true'] .halo {
+    transform: scale(1.35);
+  }
+
+  .metro-station .dot {
+    fill: var(--surface);
+    stroke: var(--c);
+    stroke-width: 4;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 160ms var(--ease-pop), fill 120ms;
+  }
+
+  .metro-station.major .dot {
+    stroke: var(--ink);
+    stroke-width: 4;
+  }
+
+  .metro-station:hover .dot,
+  .metro-station:focus-visible .dot,
+  .metro-station[aria-pressed='true'] .dot {
+    transform: scale(1.35);
+    fill: var(--c);
+  }
+
+  .metro-station:focus-visible .hit {
+    stroke: var(--focus);
+    stroke-width: 3;
+  }
+
+  .metro-tip {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+
+  .metro-tip.is-on {
+    opacity: 1;
+  }
+
+  .metro-tip rect {
+    fill: var(--ink);
+  }
+
+  .metro-tip text {
+    font-size: 13px;
+    font-weight: 700;
+    fill: var(--paper);
+  }
+
+  .metro-tip [data-tip-date] {
+    fill: var(--line-nutrition);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 入场：时间从左往右扫过 */
+  :global(html.js) .metro:not(.is-played) .metro-track {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  :global(html.js) .metro:not(.is-played) .metro-station .halo,
+  :global(html.js) .metro:not(.is-played) .metro-station .dot,
+  :global(html.js) .metro:not(.is-played) .metro-label,
+  :global(html.js) .metro:not(.is-played) .metro-merge,
+  :global(html.js) .metro:not(.is-played) .metro-future {
+    opacity: 0;
+  }
+
+  .metro.is-played .metro-track {
+    stroke-dasharray: 1;
+    animation: metro-draw var(--dur) linear var(--d) both;
+  }
+
+  .metro.is-played .metro-station .dot,
+  .metro.is-played .metro-station .halo {
+    animation: metro-pop 420ms var(--ease-pop) var(--d) both;
+  }
+
+  .metro.is-played .metro-label,
+  .metro.is-played .metro-merge,
+  .metro.is-played .metro-future {
+    animation: metro-fade 300ms ease-out var(--d) both;
+  }
+
+  .metro.is-played .metro-today {
+    animation: metro-sweep var(--dur) linear both;
+  }
+
+  @keyframes metro-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes metro-pop {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes metro-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes metro-sweep {
+    from {
+      transform: translateX(var(--from));
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .metro-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin-top: 12px;
+    padding: 14px 18px 14px 16px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
+    border-left: 6px solid var(--cap, var(--ink));
+    background: var(--surface);
+    min-height: 56px;
+    transition: border-color 160ms;
+  }
+
+  .metro-caption.is-swap > :not(.metro-caption-dot) {
+    animation: cap-swap 220ms ease-out both;
+  }
+
+  @keyframes cap-swap {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .metro-caption-dot {
+    flex: none;
+    align-self: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+
+  .metro-caption-line {
+    font-weight: 800;
+  }
+
+  .metro-caption-date {
+    font-weight: 700;
+    color: var(--ink-3);
+  }
+
+  .metro-caption-text {
+    flex: 1 1 260px;
+    color: var(--ink-2);
+  }
+
+  .metro-hint {
+    margin-top: 8px;
+  }
+
+  @media (min-width: 1000px) {
+    .metro-hint {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  function setup(root: HTMLElement) {
+    const dot = root.querySelector<HTMLElement>('[data-cap-dot]')!;
+    const line = root.querySelector<HTMLElement>('[data-cap-line]')!;
+    const date = root.querySelector<HTMLElement>('[data-cap-date]')!;
+    const text = root.querySelector<HTMLElement>('[data-cap-text]')!;
+    const caption = root.querySelector<HTMLElement>('.metro-caption')!;
+    const stations = [...root.querySelectorAll<SVGGElement>('.metro-station')];
+    const svg = root.querySelector<SVGSVGElement>('svg')!;
+    const tip = root.querySelector<SVGGElement>('[data-tip]')!;
+    const tipRect = tip.querySelector('rect')!;
+    const tipDate = tip.querySelector<SVGTSpanElement>('[data-tip-date]')!;
+    const tipText = tip.querySelector<SVGTSpanElement>('[data-tip-text]')!;
+    const VW = svg.viewBox.baseVal.width;
+
+    const placeTip = (st: SVGGElement) => {
+      tipDate.textContent = st.dataset.date ?? '';
+      tipText.textContent = st.dataset.text ?? '';
+      const t = tip.querySelector('text')!;
+      const w = t.getComputedTextLength() + 24;
+      const m = /translate\(([\d.]+) ([\d.]+)\)/.exec(st.getAttribute('transform') ?? '');
+      if (!m) return;
+      const cx = Number(m[1]);
+      const cy = Number(m[2]);
+      // 默认在站点右上方，靠右边缘时翻到左边
+      const flip = cx + w + 20 > VW;
+      const x = flip ? cx - 20 - w : cx + 20;
+      const y = cy - 36;
+      tipRect.setAttribute('x', String(x));
+      tipRect.setAttribute('y', String(y));
+      tipRect.setAttribute('width', String(w));
+      tipRect.setAttribute('height', '28');
+      t.setAttribute('x', String(x + 12));
+      t.setAttribute('y', String(y + 19));
+      tip.classList.add('is-on');
+    };
+
+    let swapTimer: number | undefined;
+    const show = (st: SVGGElement) => {
+      stations.forEach((s) => s.removeAttribute('aria-pressed'));
+      st.setAttribute('aria-pressed', 'true');
+      dot.style.background = `var(${st.dataset.color})`;
+      caption.style.setProperty('--cap', `var(${st.dataset.color})`);
+      line.textContent = st.dataset.line ?? '';
+      date.textContent = st.dataset.date ?? '';
+      text.textContent = st.dataset.text ?? '';
+      caption.classList.remove('is-swap');
+      void caption.offsetWidth;
+      caption.classList.add('is-swap');
+      window.clearTimeout(swapTimer);
+      swapTimer = window.setTimeout(() => caption.classList.remove('is-swap'), 260);
+      placeTip(st);
+    };
+
+    const hideTip = () => tip.classList.remove('is-on');
+
+    stations.forEach((st, i) => {
+      st.addEventListener('pointerenter', () => show(st));
+      st.addEventListener('pointerleave', hideTip);
+      st.addEventListener('focus', () => show(st));
+      st.addEventListener('blur', hideTip);
+      st.addEventListener('click', () => show(st));
+      st.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          show(st);
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const next = stations[i + (e.key === 'ArrowRight' ? 1 : -1)];
+          next?.focus();
+        }
+      });
+    });
+
+    // 窄屏默认滚到「今天」那一端
+    const scroller = root.querySelector<HTMLElement>('[data-metro-scroll]');
+    if (scroller && scroller.scrollWidth > scroller.clientWidth) {
+      scroller.scrollLeft = scroller.scrollWidth;
+    }
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !('IntersectionObserver' in window)) {
+      root.classList.add('is-played');
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          root.classList.add('is-played');
+          io.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(root);
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-metro]').forEach(setup);
+</script>

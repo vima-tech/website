@@ -55,15 +55,17 @@ This is a hybrid static site using **Astro** for the frontend and **Sanity CMS**
 - `src/pages/index.astro` - Homepage
 - `src/pages/blog/index.astro` - Blog listing
 - `src/pages/blog/[slug].astro` - Blog post detail
-- `src/pages/projects/index.astro` - Projects listing
+- `src/pages/projects/index.astro` - 「工作」页：时间轴 + 各工作线详情 + Sanity 里的早期作品
 - `src/pages/projects/[slug].astro` - Project detail
 - `src/pages/about.astro` - About page
 - `src/pages/cms.astro` - CMS redirect/iframe page
 - `src/layouts/Layout.astro` - Base layout with Header/Footer, SEO meta tags
 
-**Component Organization**:
-- `src/components/` - Vue and Astro components (Hero, Header, Footer, PostCard, ProjectCard, ThemeToggle)
-- `src/components/ui/` - Reusable UI components (Badge, Card, Button, SectionTitle)
+**Component Organization** (2026-11 MG 风格改版后):
+- `src/components/` - Header, Footer, Mark (站标), HeroShapes (首屏几何插画), Metro (多线时间轴 SVG), LineList (时间轴图例), PostRow (文章列表行), CatShape (分类形状), MarkdownContent / PortableText (正文渲染)
+- `src/data/worklines.ts` - 时间轴数据（各工作线、站点日期）；加新里程碑改这里即可
+- `src/styles/global.css` - 设计令牌（颜色、字号阶梯、线路颜色 `--line-*`）与正文/代码块样式；深色模式跟随 `prefers-color-scheme`
+- 字体：`@fontsource-variable/archivo` 自托管（仅拉丁字符），中文走系统字体，不依赖 Google Fonts
 
 **Sanity Schemas** (`sanity/schemaTypes/`):
 - `post.ts` - Blog articles with title, excerpt, body, coverImage, author, categories, publishedAt

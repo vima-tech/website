@@ -1,0 +1,22 @@
+---
+// 文章分类用几何形状区分（颜色留给工作线）
+interface Props {
+  title?: string;
+}
+const { title = '' } = Astro.props;
+const shape = { 实战笔记: 'square', 操作手册: 'circle', 灵感记录: 'triangle' }[title] ?? 'diamond';
+---
+
+<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" class="cat-shape">
+  {shape === 'square' && <rect x="1" y="1" width="10" height="10" rx="1.5" />}
+  {shape === 'circle' && <circle cx="6" cy="6" r="5" />}
+  {shape === 'triangle' && <path d="M6 0.5 L11.5 11 L0.5 11 Z" />}
+  {shape === 'diamond' && <path d="M6 0.5 L11.5 6 L6 11.5 L0.5 6 Z" />}
+</svg>
+
+<style>
+  .cat-shape {
+    flex: none;
+    fill: currentColor;
+  }
+</style>

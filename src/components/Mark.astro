@@ -1,0 +1,35 @@
+---
+// 站标：四个扁平几何块，颜色对应工作线
+interface Props {
+  size?: number;
+}
+const { size = 32 } = Astro.props;
+---
+
+<svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" class="mark">
+  <rect width="64" height="64" rx="14" fill="var(--ink)"></rect>
+  <circle cx="22" cy="23" r="11" fill="var(--line-factory)"></circle>
+  <rect x="33" y="12" width="20" height="20" rx="3" fill="var(--line-uniform)"></rect>
+  <path d="M12 52 L24 34 L36 52 Z" fill="var(--line-medatlas)"></path>
+  <rect x="40" y="38" width="14" height="14" rx="7" fill="var(--line-nutrition)"></rect>
+</svg>
+
+<style>
+  .mark {
+    flex: none;
+  }
+  .mark :global(*) {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 240ms var(--ease-pop);
+  }
+  :global(a:hover) > .mark circle {
+    transform: translateX(3px) scale(1.08);
+  }
+  :global(a:hover) > .mark path {
+    transform: rotate(-12deg);
+  }
+  :global(a:hover) > .mark rect:nth-of-type(2) {
+    transform: rotate(45deg) scale(0.9);
+  }
+</style>
