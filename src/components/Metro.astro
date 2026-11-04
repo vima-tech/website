@@ -1,7 +1,7 @@
 ---
 // 多线时间轴（线路图样式）
 // 横轴是日期，每条工作线一行；站点是里程碑。
-import { worklines, TODAY, RANGE, formatDate, lineById } from '../data/worklines';
+import { worklines, timelineRange, formatDate, lineById } from '../data/worklines';
 
 const W = 1160;
 const PAD_L = 132;
@@ -21,6 +21,9 @@ const rowY: Record<string, number> = {
 };
 const H = TOP + 362 + 56;
 
+const RANGE = timelineRange();
+const TODAY = RANGE.today;
+
 const day = (d: string) => (Date.parse(d) - Date.parse(RANGE.start)) / 86400000;
 const spanDays = day(RANGE.end);
 const x = (d: string) => PAD_L + (day(d) / spanDays) * (W - PAD_L - PAD_R);
@@ -30,7 +33,17 @@ const x0 = Math.min(...worklines.map((l) => x(l.stations[0].date)));
 const t = (px: number) => Math.max(0, ((px - x0) / (xToday - x0)) * SWEEP);
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
-const months = ['2026-09-01', '2026-10-01', '2026-11-01'].map((d, i, arr) => ({
+// 月份刻度：起点之后到右端之间的每个月 1 号
+const monthStarts: string[] = [];
+for (let [y, m] = RANGE.start.split('-').map(Number); ; ) {
+  m += 1;
+  if (m > 12) [y, m] = [y + 1, 1];
+  const d = `${y}-${String(m).padStart(2, '0')}-01`;
+  if (d >= RANGE.end) break;
+  monthStarts.push(d);
+}
+
+const months = monthStarts.map((d, i, arr) => ({
   x: x(d),
   w: x(arr[i + 1] ?? RANGE.end) - x(d),
   label: `${Number(d.slice(5, 7))}月`,

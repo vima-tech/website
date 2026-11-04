@@ -23,8 +23,20 @@ export interface WorkLine {
   stations: Station[];
 }
 
-export const TODAY = '2026-11-03';
-export const RANGE = { start: '2026-08-24', end: '2026-11-09' };
+// 时间轴起点固定；「今天」每次请求按北京时间现取，右端留出 6 天空白
+export const RANGE_START = '2026-08-24';
+const TAIL_DAYS = 6;
+
+export function today() {
+  // en-CA 的日期格式正好是 YYYY-MM-DD
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
+}
+
+export function timelineRange() {
+  const t = today();
+  const end = new Date(Date.parse(t) + TAIL_DAYS * 86400000).toISOString().slice(0, 10);
+  return { start: RANGE_START, today: t, end };
+}
 
 export const worklines: WorkLine[] = [
   {
