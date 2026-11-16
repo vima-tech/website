@@ -83,14 +83,14 @@ export const worklines: WorkLine[] = [
     group: 'medatlas',
     summary:
       '和 HIS 厂商一起开发的医院周边系统底座。营养、输血、审方、随访这些专业产品共用一套权限、审计、打印和交付打包，可以单独装，也可以组合装。',
-    status: '审方、营养、输血、随访已在框架上组合装配，完成旧系统切换与回滚演练，正在逐项确认上线前事项。',
+    status: '营养、随访、审方已于 11.14 汇入。先与原来的单独系统并行运行一段时间，之后停用单独系统，只保留 MedAtlas。',
     stations: [
       { date: '2026-10-03', text: '框架立项', major: true },
       { date: '2026-10-05', text: '模块化脚手架与按权限导航' },
       { date: '2026-10-17', text: '多系统工作台与单系统独享模式' },
       { date: '2026-10-31', text: '医院脚手架差距复核，按等保三级定目标' },
       { date: '2026-11-02', text: '统一 UI 组件库、平台与上线部署控制台', major: true },
-      { date: '2026-11-14', text: '组合装配切换演练、回滚演练与上线前确认清单', major: true },
+      { date: '2026-11-14', text: '营养、随访、审方汇入，组合包切换与回滚演练', major: true },
     ],
   },
   {
@@ -101,14 +101,14 @@ export const worklines: WorkLine[] = [
     group: 'medatlas',
     mergesInto: 'medatlas',
     summary: '医院内网的处方审查系统：医生开方时同步审方，药师在工作台处理，规则来自药学知识包。',
-    status: '医生端 SDK 与 HIS 对接持续调整，功能逐项归集到 MedAtlas。',
+    status: '已汇入 MedAtlas。新旧系统并行一段时间后停用单独的审方系统，只保留 MedAtlas 版本。',
     stations: [
       { date: '2026-08-31', text: '开工', major: true },
       { date: '2026-09-30', text: 'v2.0 区域审方中心与药师工作台' },
       { date: '2026-10-30', text: '处方整组审查、药品专项审查与调用审计' },
       { date: '2026-11-03', text: '离线上线包与现场一键部署', major: true },
       { date: '2026-11-09', text: '医生端 SDK 2.4.5 兼容旧内核浏览器，药品说明书库并入部署' },
-      { date: '2026-11-14', text: '归集 MedAtlas：接单科室、目录批量导入、医生端 SDK 2.5.0' },
+      { date: '2026-11-14', text: '汇入 MedAtlas：旧功能补齐、历史数据迁移演练、医生端 SDK 2.5.0', major: true },
     ],
   },
   {
@@ -119,13 +119,13 @@ export const worklines: WorkLine[] = [
     group: 'medatlas',
     mergesInto: 'medatlas',
     summary: '患者出院后的营养随访与健康管理，医生端和患者端两头用。',
-    status: '需求变更已实现并验收，功能正在归集到 MedAtlas，新增智能营养辅助诊疗。',
+    status: '已汇入 MedAtlas，新增智能营养辅助诊疗。新旧系统并行一段时间后停用单独的营养系统，只保留 MedAtlas 版本。',
     stations: [
       { date: '2026-09-25', text: '首版导入，上线前两轮问题扫描', major: true },
       { date: '2026-10-20', text: '操作演示视频' },
       { date: '2026-10-25', text: '管理功能与需求变更方案' },
       { date: '2026-11-04', text: '需求变更实现与验收，更新演示视频', major: true },
-      { date: '2026-11-14', text: '智能营养辅助诊疗：指南共识库与规则草案' },
+      { date: '2026-11-14', text: '汇入 MedAtlas：旧功能补齐，新增智能营养辅助诊疗', major: true },
     ],
   },
   {
@@ -155,14 +155,14 @@ export const worklines: WorkLine[] = [
     group: 'medatlas',
     branchFrom: 'medatlas',
     summary: '第一个直接在 MedAtlas 上长出来的专业产品：回访任务、通话记录、问卷和统计报表。',
-    status: '11.15 与医院 HIS 测试环境联调接口，11.16 到医院现场测试随访硬件设备。',
+    status: '已汇入 MedAtlas 组合包。11.15 与医院 HIS 测试环境联调接口，11.16 到医院现场测试随访硬件设备；并行一段时间后停用单独的随访系统，只保留 MedAtlas 版本。',
     stations: [
       { date: '2026-10-20', text: '回访产品预研', major: true },
       { date: '2026-10-23', text: '阶段 1～2 功能切片' },
       { date: '2026-10-31', text: '通话、统计与报表导出' },
       { date: '2026-11-01', text: '回访问卷与本地验收', major: true },
-      { date: '2026-11-14', text: '短信、患者端网页、群发关怀与复诊提醒' },
-      { date: '2026-11-15', text: 'HIS 测试环境接口联调，发布对接规范 V1.4', major: true },
+      { date: '2026-11-14', text: '汇入 MedAtlas 组合包；短信、患者端网页与复诊提醒', major: true },
+      { date: '2026-11-15', text: 'HIS 测试环境接口联调，发布对接规范 V1.4' },
     ],
   },
 ];
